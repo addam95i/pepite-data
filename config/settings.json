@@ -10,6 +10,8 @@
   "minPerSubgenre": 8,
   "maxCatalog": 3000,
   "pagesPerQuery": 2,
+  "minClipSeconds": 75,
+  "maxClipSeconds": 900,
   "queries": [
     "clip officiel rap",
     "rap fr clip officiel",
@@ -43,7 +45,8 @@
     ],
     "videoWords": [
       "type beat", "instrumental", "lyrics", "paroles", "slowed", "sped up", "speed up",
-      "nightcore", "reaction", "réaction", "karaoke", "compilation", "playlist", "remix 8d", "8d audio"
+      "nightcore", "reaction", "réaction", "karaoke", "compilation", "playlist", "remix 8d", "8d audio",
+      "shorts", "short", "tiktok", "snippet", "extrait tiktok"
     ]
   }
 }
