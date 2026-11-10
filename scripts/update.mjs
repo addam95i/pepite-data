@@ -72,9 +72,50 @@ function hasWord(text, words) {
 function cleanArtistName(name) {
   return String(name || '')
     .replace(/\s*-\s*topic$/i, '')
+    .replace(/\(.*?\)|\[.*?\]/g, ' ')
     .replace(/\b(official|officiel|officielle|offical|music|musique|tv|vevo)\b/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
+}
+
+// Le clip doit être posté par l'artiste lui-même : son nom de chaîne apparaît dans le titre.
+// Ça écarte les chaînes qui repostent les sons des autres.
+function titleHasArtist(title, channelTitle) {
+  const name = norm(cleanArtistName(channelTitle));
+  if (!name) return false;
+  const t = norm(title);
+  if (` ${t} `.includes(` ${name} `)) return true;
+  const a = name.replace(/ /g, '');
+  return a.length >= 5 && t.replace(/ /g, '').includes(a);
+}
+
+// Clip francophone : langue déclarée en français, ou pays francophone, ou assez de mots français.
+const FR_WORDS = ['le', 'la', 'les', 'des', 'du', 'et', 'pas', 'je', 'tu', 'nous', 'vous', 'mon', 'ma', 'mes',
+  'dans', 'pour', 'avec', 'qui', 'est', 'officiel', 'officielle', 'realise', 'realisation', 'abonnez', 'abonne',
+  'disponible', 'plateformes', 'extrait', 'sortie', 'nouveau', 'clip video'];
+function frenchScore(text) {
+  const t = ` ${norm(text)} `;
+  return FR_WORDS.filter((w) => t.includes(` ${w} `)).length;
+}
+function isFrench(v) {
+  const lang = (v.lang || '').slice(0, 2).toLowerCase();
+  const score = frenchScore(v.text);
+  if (lang === 'fr') return true;
+  if (lang) return score >= 5;
+  return score >= 3;
+}
+
+function durationSeconds(iso) {
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
+  if (!m) return null;
+  return (Number(m[1] || 0) * 3600) + (Number(m[2] || 0) * 60) + Number(m[3] || 0);
+}
+
+function isArtistClip(v) {
+  if (isExcludedVideo(v.title)) return false;
+  if (/vevo$/i.test(v.channelTitle || '')) return false;
+  if (v.seconds !== null && (v.seconds < config.minClipSeconds || v.seconds > config.maxClipSeconds)) return false;
+  return titleHasArtist(v.title, v.channelTitle) && isFrench(v);
 }
 
 function daysBetween(a, b) {
@@ -89,7 +130,7 @@ function detectSubgenre(text) {
 }
 
 function isExcludedChannel(id, title) {
-  return config.exclude.channelIds.includes(id) || hasWord(title, config.exclude.channelWords);
+  return config.exclude.channelIds.includes(id) || /vevo$/i.test(title) || hasWord(title, config.exclude.channelWords);
 }
 
 function isExcludedVideo(title) {
@@ -130,28 +171,35 @@ const allVideoIds = [...new Set([...foundVideoIds, ...trackedVideoIds])];
 
 const videos = {};
 for (const ids of chunks(allVideoIds, 50)) {
-  const r = await yt('videos', { part: 'snippet,statistics', id: ids.join(','), maxResults: 50 }, 1);
+  const r = await yt('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(','), maxResults: 50 }, 1);
   for (const v of r.items || []) {
     videos[v.id] = {
       id: v.id,
       channelId: v.snippet.channelId,
+      channelTitle: v.snippet.channelTitle,
       title: v.snippet.title,
       text: `${v.snippet.title} ${v.snippet.description || ''} ${(v.snippet.tags || []).join(' ')}`,
+      lang: v.snippet.defaultAudioLanguage || v.snippet.defaultLanguage || '',
+      seconds: durationSeconds(v.contentDetails?.duration),
       views: Number(v.statistics?.viewCount || 0),
       publishedAt: v.snippet.publishedAt
     };
   }
 }
 
-// Meilleur clip récent trouvé aujourd'hui pour chaque chaîne.
+// Meilleur clip récent trouvé aujourd'hui pour chaque chaîne (clips de l'artiste lui-même uniquement).
 const bestNewVideo = {};
+let rejected = 0;
 for (const id of foundVideoIds) {
   const v = videos[id];
   if (!v) continue;
+  if (!isArtistClip(v)) { rejected++; continue; }
   const speed = v.views / Math.max(1, daysBetween(v.publishedAt, now));
   const prev = bestNewVideo[v.channelId];
   if (!prev || speed > prev.speed) bestNewVideo[v.channelId] = { ...v, speed };
 }
+
+console.log(`Clips écartés (reposts, étrangers, Shorts) : ${rejected} · chaînes d'artistes retenues : ${Object.keys(bestNewVideo).length}`);
 
 // ---------- 3. abonnés des chaînes ----------
 const channelIds = [...new Set([...Object.keys(bestNewVideo), ...Object.keys(history.channels)])];
