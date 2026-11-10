@@ -1,0 +1,49 @@
+{
+  "threshold": 100000,
+  "minSubscribers": 300,
+  "minClipViews": 3000,
+  "searchDays": 14,
+  "maxClipAgeDays": 30,
+  "historyDays": 90,
+  "forgetAfterDays": 60,
+  "radarSize": 60,
+  "minPerSubgenre": 8,
+  "maxCatalog": 3000,
+  "pagesPerQuery": 2,
+  "queries": [
+    "clip officiel rap",
+    "rap fr clip officiel",
+    "drill fr clip",
+    "drill clip officiel",
+    "freestyle rap fr",
+    "trap fr clip officiel",
+    "rap mélo clip",
+    "afro trap clip officiel",
+    "rnb fr clip officiel",
+    "rap boom bap fr",
+    "nouveau rappeur clip",
+    "premier clip rap"
+  ],
+  "defaultSubgenre": "Rap FR",
+  "subgenres": [
+    { "name": "Drill", "words": ["drill", "drill fr", "uk drill"] },
+    { "name": "Afro-trap", "words": ["afro trap", "afrotrap", "afro"] },
+    { "name": "R&B", "words": ["rnb", "r&b", "r n b", "rnb fr"] },
+    { "name": "Mélo", "words": ["melo", "mélo", "melodique", "mélodique", "sentimental"] },
+    { "name": "Trap", "words": ["trap", "808"] },
+    { "name": "Old school", "words": ["boom bap", "boombap", "old school", "oldschool", "kickage"] }
+  ],
+  "exclude": {
+    "channelIds": [],
+    "channelWords": [
+      "planete rap", "skyrock", "booska", "rapelite", "daymolition", "grunt", "mouv",
+      "generations", "lyrics", "paroles", "nightcore", "karaoke", "type beat", "beats",
+      "instrumental", "reaction", "compilation", "playlist", "radio", "media", "records",
+      "label", "news", "actu", "promo"
+    ],
+    "videoWords": [
+      "type beat", "instrumental", "lyrics", "paroles", "slowed", "sped up", "speed up",
+      "nightcore", "reaction", "réaction", "karaoke", "compilation", "playlist", "remix 8d", "8d audio"
+    ]
+  }
+}
